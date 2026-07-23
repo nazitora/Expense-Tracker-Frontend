@@ -854,6 +854,10 @@ input, select, textarea { font-family: inherit; }
   font-weight: 600;
   font-size: 0.95rem;
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .category-badge {
