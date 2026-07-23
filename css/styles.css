@@ -831,6 +831,7 @@ input, select, textarea { font-family: inherit; }
   align-items: center;
   gap: var(--space-md);
   transition: var(--transition);
+  min-width: 220px;
 }
 
 .category-card:hover {
