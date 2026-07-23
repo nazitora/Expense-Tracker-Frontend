@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExpenseFlow — Smart Expense Tracker</title>
+  <meta name="description" content="Track your expenses, visualise spending habits, and split group expenses — all in one place." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>" />
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════
+       TOAST CONTAINER
+       ═══════════════════════════════════════════════ -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- ═══════════════════════════════════════════════
+       AUTH SCREEN
+       ═══════════════════════════════════════════════ -->
+  <section id="auth-screen">
+    <div class="auth-container">
+      <!-- Logo -->
+      <div class="auth-logo">
+        <div class="auth-logo-icon">💰</div>
+        <h1>ExpenseFlow</h1>
+        <p>Smart expense tracking & group splitting</p>
+      </div>
+
+      <!-- Auth Card -->
+      <div class="auth-card">
+        <!-- Tabs -->
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="login-tab">Sign In</button>
+          <button class="auth-tab" id="register-tab">Sign Up</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" class="auth-form active" autocomplete="on">
+          <div id="login-error" class="auth-error"></div>
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">
+            <span class="btn-text">Sign In</span>
+            <span class="spinner"></span>
+          </button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="register-form" class="auth-form" autocomplete="on">
+          <div id="register-error" class="auth-error"></div>
+          <div class="form-group">
+            <label for="register-name">Full Name</label>
+            <input type="text" id="register-name" placeholder="John Doe" required autocomplete="name" />
+          </div>
+          <div class="form-group">
+            <label for="register-email">Email</label>
+            <input type="email" id="register-email" placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label for="register-password">Password</label>
+            <input type="password" id="register-password" placeholder="Min 6 characters" required minlength="6" autocomplete="new-password" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">
+            <span class="btn-text">Create Account</span>
+            <span class="spinner"></span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       MAIN APP
+       ═══════════════════════════════════════════════ -->
+  <div id="app-screen">
+
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+      <button class="hamburger-btn" id="hamburger-btn">☰</button>
+      <span class="mobile-brand">ExpenseFlow</span>
+      <div style="width:40px;"></div>
+    </div>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="sidebar-brand-icon">💰</div>
+          <h2>ExpenseFlow</h2>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Menu</div>
+        <button class="nav-item active" data-view="dashboard">
+          <span class="nav-icon">📊</span> Dashboard
+        </button>
+        <button class="nav-item" data-view="expenses">
+          <span class="nav-icon">💸</span> Expenses
+        </button>
+        <button class="nav-item" data-view="categories">
+          <span class="nav-icon">🏷️</span> Categories
+        </button>
+
+        <div class="nav-section-label" style="margin-top:12px;">Social</div>
+        <button class="nav-item" data-view="groups">
+          <span class="nav-icon">👥</span> Groups
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar" id="user-avatar">?</div>
+          <div>
+            <div class="user-name" id="user-name">User</div>
+            <div class="user-email" id="user-email">user@email.com</div>
+          </div>
+        </div>
+        <button class="btn-logout" id="btn-logout">
+          <span>🚪</span> Log Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <!-- ───────────── DASHBOARD VIEW ───────────── -->
+      <div id="view-dashboard" class="view active">
+        <div class="page-header">
+          <div class="page-header-actions">
+            <div>
+              <h1>Dashboard</h1>
+              <p>Your spending overview for <span id="dashboard-month-label">this month</span></p>
+            </div>
+          </div>
+        </div>
+
+        <div id="dashboard-loader" class="loading-spinner" style="display:none;"></div>
+
+        <div id="dashboard-content">
+          <!-- Stats Cards -->
+          <div class="stats-grid stagger-in">
+            <div class="stat-card">
+              <div class="stat-card-header">
+                <span class="stat-label">Total Spent</span>
+                <div class="stat-card-icon">💰</div>
+              </div>
+              <div class="stat-value" id="stat-total">₹0</div>
+              <div class="stat-sub">This month</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-header">
+                <span class="stat-label">Transactions</span>
+                <div class="stat-card-icon">📝</div>
+              </div>
+              <div class="stat-value" id="stat-count">0</div>
+              <div class="stat-sub">This month</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-header">
+                <span class="stat-label">Avg / Transaction</span>
+                <div class="stat-card-icon">📈</div>
+              </div>
+              <div class="stat-value" id="stat-avg">₹0</div>
+              <div class="stat-sub">This month</div>
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div class="charts-grid">
+            <div class="chart-card">
+              <div class="chart-card-title">🍩 Spending by Category</div>
+              <div class="chart-wrapper" style="height:300px;">
+                <canvas id="pie-chart"></canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-title">📊 Monthly Trend</div>
+              <div class="chart-wrapper" style="height:300px;">
+                <canvas id="bar-chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ───────────── EXPENSES VIEW ───────────── -->
+      <div id="view-expenses" class="view">
+        <div class="page-header">
+          <div class="page-header-actions">
+            <div>
+              <h1>Expenses</h1>
+              <p>Track and manage your spending</p>
+            </div>
+            <button class="btn btn-primary" onclick="expenses.openAddModal()">
+              <span>+</span> Add Expense
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-bar">
+          <select id="expense-filter-month"><option value="">All Months</option></select>
+          <select id="expense-filter-year"><option value="">All Years</option></select>
+          <select id="expense-filter-category"><option value="">All Categories</option></select>
+        </div>
+
+        <!-- Expenses List -->
+        <div id="expenses-list"></div>
+      </div>
+
+
+      <!-- ───────────── CATEGORIES VIEW ───────────── -->
+      <div id="view-categories" class="view">
+        <div class="page-header">
+          <div class="page-header-actions">
+            <div>
+              <h1>Categories</h1>
+              <p>Manage your expense categories</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Create Category -->
+        <div style="display:flex;gap:12px;margin-bottom:24px;max-width:400px;">
+          <input type="text" id="new-category-name" class="form-group"
+                 placeholder="New category name..."
+                 style="flex:1;padding:10px 16px;background:var(--bg-input);border:1px solid var(--border);
+                        border-radius:var(--radius-md);color:var(--text-primary);font-size:0.9rem;outline:none;" />
+          <button class="btn btn-primary" id="btn-create-category">+ Add</button>
+        </div>
+
+        <div id="categories-container"></div>
+      </div>
+
+
+      <!-- ───────────── GROUPS VIEW ───────────── -->
+      <div id="view-groups" class="view">
+        <div class="page-header">
+          <div class="page-header-actions">
+            <div>
+              <h1>Groups</h1>
+              <p>Split expenses with friends &amp; family</p>
+            </div>
+            <button class="btn btn-primary" onclick="groups.openCreateModal()">
+              <span>+</span> New Group
+            </button>
+          </div>
+        </div>
+
+        <!-- Group List -->
+        <div id="groups-list-container"></div>
+
+        <!-- Group Detail Panel -->
+        <div id="group-detail-panel" class="group-detail-panel">
+          <button class="group-back-btn" onclick="groups.goBack()">
+            ← Back to Groups
+          </button>
+
+          <h2 id="group-detail-name" style="font-size:1.5rem;margin-bottom:8px;"></h2>
+
+          <div id="group-detail-members" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;"></div>
+
+          <button class="btn btn-primary btn-sm" onclick="groups.openExpenseModal()" style="margin-bottom:24px;">
+            + Add Group Expense
+          </button>
+
+          <!-- Balances -->
+          <div class="section-title"><span class="icon">💰</span> Balances</div>
+          <div id="group-balances" style="margin-bottom:24px;">
+            <div class="loading-spinner"></div>
+          </div>
+
+          <!-- Settlements -->
+          <div class="section-title"><span class="icon">🤝</span> Settlement Plan</div>
+          <div id="group-settlements">
+            <div class="loading-spinner"></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       MODALS
+       ═══════════════════════════════════════════════ -->
+
+  <!-- Add/Edit Expense Modal -->
+  <div id="expense-modal">
+    <div class="modal-overlay" onclick="if(event.target===this)expenses.closeModal()">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title" id="expense-modal-title">Add Expense</h3>
+          <button class="modal-close" onclick="expenses.closeModal()">✕</button>
+        </div>
+        <form id="expense-form">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="expense-category">Category</label>
+              <select id="expense-category" required></select>
+            </div>
+            <div class="form-group">
+              <label for="expense-amount">Amount (₹)</label>
+              <input type="number" id="expense-amount" placeholder="0.00" min="0.01" step="0.01" required />
+            </div>
+            <div class="form-group">
+              <label for="expense-description">Description</label>
+              <input type="text" id="expense-description" placeholder="What was this for?" />
+            </div>
+            <div class="form-group">
+              <label for="expense-date">Date</label>
+              <input type="date" id="expense-date" required />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="expenses.closeModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+              <span class="btn-text">Save Expense</span>
+              <span class="spinner"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Group Modal -->
+  <div id="create-group-modal">
+    <div class="modal-overlay" onclick="if(event.target===this)groups.closeCreateModal()">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Create Group</h3>
+          <button class="modal-close" onclick="groups.closeCreateModal()">✕</button>
+        </div>
+        <form id="create-group-form">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="group-name">Group Name</label>
+              <input type="text" id="group-name" placeholder="e.g., Goa Trip 🏖️" required />
+            </div>
+            <div class="form-group">
+              <label for="group-member-ids">Member IDs (comma-separated)</label>
+              <input type="text" id="group-member-ids" placeholder="Paste member user IDs..." />
+              <small style="color:var(--text-muted);font-size:0.75rem;margin-top:4px;display:block;">
+                Leave empty to create a solo group. Add other users' IDs to split expenses.
+              </small>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="groups.closeCreateModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Group</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Group Expense Modal -->
+  <div id="group-expense-modal">
+    <div class="modal-overlay" onclick="if(event.target===this)groups.closeExpenseModal()">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Add Group Expense</h3>
+          <button class="modal-close" onclick="groups.closeExpenseModal()">✕</button>
+        </div>
+        <form id="group-expense-form">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="group-expense-amount">Amount (₹)</label>
+              <input type="number" id="group-expense-amount" placeholder="0.00" min="0.01" step="0.01" required />
+            </div>
+            <div class="form-group">
+              <label for="group-expense-desc">Description</label>
+              <input type="text" id="group-expense-desc" placeholder="What was this for?" />
+            </div>
+            <div class="form-group">
+              <label for="group-expense-date">Date</label>
+              <input type="date" id="group-expense-date" required />
+            </div>
+            <small style="color:var(--text-muted);font-size:0.78rem;display:block;">
+              💡 The expense will be split equally among all group members.
+            </small>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="groups.closeExpenseModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Expense</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SCRIPTS (order matters)
+       ═══════════════════════════════════════════════ -->
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/categories.js"></script>
+  <script src="js/expenses.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/groups.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
